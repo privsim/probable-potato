@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  headscale:
+    image: headscale/headscale:latest    
+    container_name: headscale
+    volumes:
+      - ./config:/etc/headscale
+      - fractal-app-volume:/var/lib/headscale
+    command: headscale serve
+    healthcheck:
+      test: curl localhost:8080
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    environment:
+      LINK_DOMAIN_DEFAULT: $LINK_DOMAIN_DEFAULT
+  headscale-ui:
+    image: ghcr.io/gurucomputing/headscale-ui:latest
+    restart: unless-stopped
+    container_name: headscale-ui
+  link:
+    environment:
+      EXPOSE: headscale:8080
+      EXPOSE: headscale-ui:443
+      volumes:
+        - fractal-link-volume:/root/.local/share/caddy
+volumes:
+  fractal-app-volume-data:
+      driver: $FRACTAL_STORAGE_PLUGIN
+      driver_opts:
+         privkey: $APP_VOLUME_PRIVKEY
+         mode: write
+         subfolder: data
+  fractal-link-volume:
+    external: true
+    name: $LINK_VOLUME_NAME
+
